@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.views import View
 from django.http import HttpResponse
 from django.views.generic import CreateView, ListView
-from transactions.constants import DEPOSIT, WITHDRAWAL,LOAN, LOAN_PAID
+from transactions.constants import DEPOSIT, WITHDRAWAL,LOAN, LOAN_PAID,SEND_MONEY,RECEIVE_MONEY
 from datetime import datetime
 from django.db.models import Sum
 from transactions.forms import (
@@ -17,6 +17,8 @@ from transactions.forms import (
 from transactions.models import Transaction
 from django.core.mail import EmailMessage,EmailMultiAlternatives
 from django.template.loader import render_to_string
+from accounts.models import UserBankAccount
+from .forms import SendMoneyForm
 
 def send_transaction_email(user,amount,subject,template):
     # mail_subject = 'Deposite Message'
@@ -50,6 +52,45 @@ class TransactionCreateMixin(LoginRequiredMixin, CreateView):
         })
 
         return context
+    
+class SendMoneyView(TransactionCreateMixin):
+    title = "Send money"
+    form_class = SendMoneyForm
+    template_name = 'transactions/send_money.html'
+
+    def get_initial(self):
+        initial = {
+            'transaction_type': SEND_MONEY
+        }
+        return initial
+
+    def form_valid(self, form):
+        amount = form.cleaned_data['amount']
+        account_no = form.cleaned_data['account_no']
+
+        receiver_account = UserBankAccount.objects.get(account_no=account_no)
+        receiver_account.balance += amount
+        receiver_account.save(update_fields=['balance'])
+
+        receiver_transaction = Transaction(
+            amount=amount, transaction_type=RECEIVE_MONEY, account=receiver_account, balance_after_transaction=receiver_account.balance)
+        receiver_transaction.save()
+
+        sender_account = self.request.user.account
+        sender_account.balance -= amount
+        sender_account.save(update_fields=['balance'])
+
+        sender_email = self.request.user.email
+        receiver_email = receiver_account.user.email
+
+        
+        send_transaction_email(self.request.user,amount,"Sending Message", 'transactions/sender_email.html')
+    
+        send_transaction_email(receiver_account.user,amount,"Receiving Message", 'transactions/receiver_email.html')
+
+        messages.success(self.request, f"""{
+                         amount} has been sent to Account:  {account_no}""")
+        return super().form_valid(form)
 
 
 class DepositMoneyView(TransactionCreateMixin):

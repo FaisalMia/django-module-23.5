@@ -6,6 +6,40 @@ from django.urls import reverse_lazy
 from django.contrib.auth.views import LoginView, LogoutView
 from django.views import View
 from django.shortcuts import redirect
+from django.contrib.auth.views import PasswordChangeView
+from .forms import UserPasswordChangeForm
+import datetime
+from django.contrib import messages
+from django.template.loader import render_to_string
+from django.core.mail import EmailMessage,EmailMultiAlternatives
+
+def send_password_email(user,context,subject,template):
+    # mail_subject = 'Deposite Message'
+    message = render_to_string(template,{
+        'user' : user,
+        **context
+    })
+    # to_email = to_user
+    send_email = EmailMultiAlternatives(subject,'',to=[user.email])
+    # print('aaaaaaaaaaaaa',to_email,'aaaaaaaaaaaaaaa',send_email)
+    send_email.attach_alternative(message,"text/html")
+    send_email.send()
+
+class UserPasswordChangeView(PasswordChangeView):
+    template_name = 'accounts/password_change.html'
+    form_class = UserPasswordChangeForm
+    success_url = reverse_lazy("profile")
+
+    def form_valid(self, form):
+        current_datetime = datetime.datetime.now()
+
+        messages.success(self.request, f"""Your password has been changed""")
+
+        send_password_email(self.request.user, {
+            'time': current_datetime.strftime("%A, %B %d, %Y") 
+        },"Password Change Message", 'accounts/password_change_mail.html')
+        
+        return super().form_valid(form)
 
 class UserRegistrationView(FormView):
     template_name = 'accounts/user_registration.html'

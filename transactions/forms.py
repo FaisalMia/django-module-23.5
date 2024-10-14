@@ -1,5 +1,6 @@
 from django import forms
 from .models import Transaction
+from accounts.models import UserBankAccount
 class TransactionForm(forms.ModelForm):
     class Meta:
         model = Transaction
@@ -64,4 +65,26 @@ class LoanRequestForm(TransactionForm):
     def clean_amount(self):
         amount = self.cleaned_data.get('amount')
 
+        return amount
+    
+class SendMoneyForm(TransactionForm):
+    account_no = forms.IntegerField()
+
+    class Meta:
+        model = Transaction
+        fields = ['amount', 'transaction_type']
+
+    def clean_account_no(self):
+        account_no = self.cleaned_data['account_no']
+        account = UserBankAccount.objects.filter(
+            account_no=account_no).exists()
+        if not account:
+            raise forms.ValidationError(
+                f"User with account {account_no} does not exist")
+        return account_no
+
+    def clean_amount(self):
+        amount = self.cleaned_data['amount']
+        if amount > self.account.balance:
+            raise forms.ValidationError(f"You don't have enough money")
         return amount
