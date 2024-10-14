@@ -106,7 +106,7 @@ WSGI_APPLICATION = 'mamar_bank.wsgi.application'
 DATABASES = {
     'default': dj_database_url.config(
         # Replace this value with your local database's connection string.
-        default='postgresql://bankmanagement_4a7c_user:9MjKpMfkivzMQODdBCvDJ84GJPzjFMbU@dpg-cs69pudumphs73b68s6g-a.oregon-postgres.render.com/bankmanagement_4a7c',
+        default='postgresql://bankmanagement_ch25_user:dnsnCV14xtLvpx0G2y6WCwLzX7aoDV2V@dpg-cs6m8r5svqrc73dn46lg-a.oregon-postgres.render.com/bankmanagement_ch25',
     )
 }
 
@@ -157,4 +157,4 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'faisalmia369@gmail.com'
-EMAIL_HOST_PASSWORD = 'qagbxgmrdrthpjoz'
+EMAIL_HOST_PASSWORD = 'wcqzrbqzsrfnjncy'
